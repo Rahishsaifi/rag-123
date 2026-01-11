@@ -33,7 +33,7 @@ Write-Host "Installing dependencies..." -ForegroundColor Cyan
 Write-Host "Upgrading pip..." -ForegroundColor Gray
 pip install --upgrade pip --quiet
 Write-Host "Installing core packages..." -ForegroundColor Gray
-pip install fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic
+pip install fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic python-dotenv
 Write-Host "Attempting to install tiktoken (optional)..." -ForegroundColor Gray
 $tiktokenResult = pip install tiktoken 2>&1
 if ($LASTEXITCODE -ne 0) {
@@ -42,21 +42,9 @@ if ($LASTEXITCODE -ne 0) {
 
 # Check environment variables
 Write-Host "Checking environment variables..." -ForegroundColor Cyan
-$envFile = Get-Content ".env" -ErrorAction SilentlyContinue
-$requiredVars = @("AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY", "AZURE_SEARCH_ENDPOINT", "AZURE_SEARCH_API_KEY", "AZURE_BLOB_CONNECTION_STRING")
-$missing = @()
-
-foreach ($var in $requiredVars) {
-    $found = $false
-    foreach ($line in $envFile) {
-        if ($line -match "^$var=") {
-            $found = $true
-            break
-        }
-    }
-    if (-not $found) {
-        $missing += $var
-    }
+python -c "import os; from pathlib import Path; from dotenv import load_dotenv; env_file = Path('.env'); load_dotenv(env_file) if env_file.exists() else None; vars_required = ['AZURE_OPENAI_ENDPOINT', 'AZURE_OPENAI_API_KEY', 'AZURE_SEARCH_ENDPOINT', 'AZURE_SEARCH_API_KEY', 'AZURE_BLOB_CONNECTION_STRING']; missing = [v for v in vars_required if not os.getenv(v)]; print('Missing:', ', '.join(missing)) if missing else print('All required variables set'); exit(1) if missing else exit(0)" 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Warning: Some required environment variables may be missing" -ForegroundColor Yellow
 }
 
 if ($missing.Count -gt 0) {

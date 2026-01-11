@@ -38,7 +38,7 @@ else
     echo "Upgrading pip..."
     pip install --upgrade pip --quiet
     echo "Installing core packages..."
-    pip install -q fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic
+    pip install -q fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic python-dotenv
     echo "Attempting to install tiktoken (optional)..."
     pip install -q tiktoken 2>/dev/null || echo "⚠ tiktoken skipped (using fallback chunking)"
 fi
@@ -49,15 +49,12 @@ python3 -c "
 import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
 
-# Load .env file manually
+# Load .env file using python-dotenv
 env_file = Path('.env')
 if env_file.exists():
-    for line in env_file.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith('#') and '=' in line:
-            key, value = line.split('=', 1)
-            os.environ[key.strip()] = value.strip()
+    load_dotenv(env_file)
 
 required_vars = [
     'AZURE_OPENAI_ENDPOINT',

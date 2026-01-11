@@ -35,21 +35,21 @@ if exist "install.sh" (
     REM Try to use install script if available (requires WSL or Git Bash)
     echo Note: install.sh requires WSL or Git Bash. Installing manually...
     pip install --upgrade pip --quiet
-    pip install fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic
+    pip install fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic python-dotenv
     echo Attempting to install tiktoken (optional)...
     pip install tiktoken 2>nul || echo tiktoken skipped - using fallback chunking
 ) else (
     echo Upgrading pip...
     pip install --upgrade pip --quiet
     echo Installing core packages...
-    pip install fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic
+    pip install fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic python-dotenv
     echo Attempting to install tiktoken (optional)...
     pip install tiktoken 2>nul || echo tiktoken skipped - using fallback chunking
 )
 
 REM Check if all required environment variables are set
 echo Checking environment variables...
-python -c "import os; from pathlib import Path; env_file = Path('.env'); vars_required = ['AZURE_OPENAI_ENDPOINT', 'AZURE_OPENAI_API_KEY', 'AZURE_SEARCH_ENDPOINT', 'AZURE_SEARCH_API_KEY', 'AZURE_BLOB_CONNECTION_STRING']; missing = [v for v in vars_required if not os.getenv(v)]; exit(1) if missing else exit(0)" 2>nul
+python -c "import os; from pathlib import Path; from dotenv import load_dotenv; env_file = Path('.env'); load_dotenv(env_file) if env_file.exists() else None; vars_required = ['AZURE_OPENAI_ENDPOINT', 'AZURE_OPENAI_API_KEY', 'AZURE_SEARCH_ENDPOINT', 'AZURE_SEARCH_API_KEY', 'AZURE_BLOB_CONNECTION_STRING']; missing = [v for v in vars_required if not os.getenv(v)]; exit(1) if missing else exit(0)" 2>nul
 if errorlevel 1 (
     echo Warning: Some required environment variables may be missing.
     echo Please configure all required environment variables in .env file

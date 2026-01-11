@@ -10,7 +10,7 @@ pip install --upgrade pip --quiet
 
 # Install core dependencies first (required)
 echo "Installing core dependencies..."
-pip install -q fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic
+pip install -q fastapi uvicorn[standard] python-multipart azure-storage-blob azure-search-documents openai pypdf python-docx pydantic-settings pydantic python-dotenv
 
 # Try to install tiktoken (optional)
 echo "Attempting to install tiktoken (optional, for better chunking)..."

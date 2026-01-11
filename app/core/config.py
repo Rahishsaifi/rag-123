@@ -1,18 +1,31 @@
 """
-Application configuration management using pydantic-settings.
-Loads environment variables and provides type-safe configuration.
+Application configuration management using python-dotenv and pydantic-settings.
+Loads environment variables from .env file using python-dotenv, then validates with pydantic.
 """
 from typing import Optional
+from pathlib import Path
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, model_validator
 
+# Load .env file using python-dotenv (primary loader)
+# This runs when this module is imported, before Settings is instantiated
+env_path = Path('.env')
+if env_path.exists():
+    load_dotenv(env_path, override=True)
+else:
+    # Try to find .env in parent directories (useful for different working directories)
+    parent_env = Path(__file__).parent.parent.parent / '.env'
+    if parent_env.exists():
+        load_dotenv(parent_env, override=True)
+
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
+    """Application settings loaded from environment variables via python-dotenv."""
     
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
+        # Don't load .env file again - python-dotenv already loaded it
+        # Just read from environment variables
         case_sensitive=False,
         extra="ignore",
         env_ignore_empty=True,
