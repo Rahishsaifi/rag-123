@@ -23,8 +23,16 @@ cp env.example .env
 
 4. Run:
 ```bash
+# Linux/Mac:
 ./run.sh
-# or
+
+# Windows (Command Prompt):
+run.bat
+
+# Windows (PowerShell):
+.\run.ps1
+
+# Or manually:
 uvicorn app.main:app --reload
 ```
 
