@@ -76,29 +76,99 @@ try:
     elif "your-" in endpoint or "your-" in api_key:
         print("   ❌ Placeholder values detected (contains 'your-')")
     else:
+        # Check OpenAI version first
+        try:
+            import openai
+            openai_version = openai.__version__
+            version_parts = [int(x) for x in openai_version.split('.')[:3]]
+            if version_parts < [1, 55, 3]:
+                print(f"   ⚠️  OpenAI version {openai_version} detected (needs >= 1.55.3)")
+                print(f"      Run: pip install --upgrade 'openai>=1.55.3'")
+                print(f"      Or run: ./fix_openai.sh")
+        except:
+            pass
+        
         # Remove trailing slash from endpoint if present
         endpoint_clean = endpoint.rstrip('/')
         
-        client = AzureOpenAI(
-            api_key=api_key,
-            api_version=api_version,
-            azure_endpoint=endpoint_clean
-        )
+        try:
+            client = AzureOpenAI(
+                api_key=api_key,
+                api_version=api_version,
+                azure_endpoint=endpoint_clean
+            )
+        except TypeError as e:
+            if "proxies" in str(e):
+                print(f"   ❌ OpenAI SDK compatibility error: {str(e)}")
+                print(f"      This is a known issue with OpenAI SDK < 1.55.3")
+                print(f"      Solution:")
+                print(f"        1. Run: pip install --upgrade 'openai>=1.55.3'")
+                print(f"        2. Or run: ./fix_openai.sh")
+                print(f"        3. Then run this test again")
+                sys.exit(1)
+            raise
+        
         # Try a simple API call to test connection
         try:
             # Try embeddings endpoint (most reliable test)
+            embedding_deployment = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-ada-002")
+            
+            print(f"      Testing connection to: {endpoint_clean}")
+            print(f"      Using deployment: {embedding_deployment}")
+            
             test_response = client.embeddings.create(
-                model=os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-ada-002"),
+                model=embedding_deployment,
                 input="test"
             )
             print(f"   ✅ Azure OpenAI connection successful")
             print(f"      Endpoint: {endpoint_clean}")
+            print(f"      Tested with deployment: {embedding_deployment}")
             results["openai"] = True
         except Exception as e:
-            print(f"   ❌ Azure OpenAI connection failed: {str(e)}")
-            print(f"      Endpoint: {endpoint}")
+            error_msg = str(e)
+            error_type = type(e).__name__
+            print(f"   ❌ Azure OpenAI connection failed")
+            print(f"      Error Type: {error_type}")
+            print(f"      Error Message: {error_msg}")
+            print(f"      Endpoint: {endpoint_clean}")
+            print(f"      API Version: {api_version}")
+            print(f"      Deployment: {embedding_deployment}")
+            
+            # Provide specific troubleshooting based on error type
+            if "Connection" in error_msg or "timeout" in error_msg.lower() or "ConnectionError" in error_type:
+                print(f"      🔍 Connection Error Troubleshooting:")
+                print(f"         1. Verify endpoint format: https://YOUR-RESOURCE.openai.azure.com")
+                print(f"         2. Check network connectivity: ping {endpoint_clean.replace('https://', '').split('/')[0]}")
+                print(f"         3. Verify firewall/proxy isn't blocking Azure")
+                print(f"         4. Ensure endpoint doesn't include /v1 or other paths")
+                print(f"         5. Try accessing endpoint in browser (should show Azure OpenAI page)")
+            elif "401" in error_msg or "Unauthorized" in error_msg or "Authentication" in error_type:
+                print(f"      🔍 Authentication Error Troubleshooting:")
+                print(f"         1. Verify API key is correct (check for extra spaces)")
+                print(f"         2. Check if API key has expired")
+                print(f"         3. Ensure API key has proper permissions")
+                print(f"         4. Verify key is from the correct Azure OpenAI resource")
+            elif "404" in error_msg or "not found" in error_msg.lower():
+                print(f"      🔍 Not Found Error Troubleshooting:")
+                print(f"         1. Verify deployment name '{embedding_deployment}' exists in Azure portal")
+                print(f"         2. Check if deployment is active and not deleted")
+                print(f"         3. Verify deployment is in the same resource as endpoint")
+                print(f"         4. Check deployment name spelling (case-sensitive)")
+            elif "403" in error_msg or "Forbidden" in error_msg:
+                print(f"      🔍 Forbidden Error Troubleshooting:")
+                print(f"         1. Check if your Azure subscription has access to OpenAI")
+                print(f"         2. Verify deployment permissions and quotas")
+                print(f"         3. Check regional availability")
+                print(f"         4. Verify resource group permissions")
+            else:
+                print(f"      🔍 General Troubleshooting:")
+                print(f"         1. Check Azure OpenAI resource status in Azure portal")
+                print(f"         2. Verify all credentials are correct")
+                print(f"         3. Check Azure service health status")
+                print(f"         4. Review error details above for specific issues")
 except ImportError:
-    print("   ❌ openai package not installed. Run: pip install openai")
+    print("   ❌ openai package not installed.")
+    print("      Run: pip install 'openai>=1.55.3'")
 except Exception as e:
     print(f"   ❌ Error testing Azure OpenAI: {str(e)}")
 
