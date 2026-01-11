@@ -75,12 +75,10 @@ class DocumentParser:
             doc = Document(file_path)
             text_parts = []
             
-            # Extract text from paragraphs
             for paragraph in doc.paragraphs:
                 if paragraph.text.strip():
                     text_parts.append(paragraph.text)
             
-            # Extract text from tables
             for table in doc.tables:
                 for row in table.rows:
                     row_text = " | ".join(cell.text.strip() for cell in row.cells if cell.text.strip())
@@ -135,13 +133,8 @@ class DocumentParser:
         Returns:
             Normalized text
         """
-        # Replace multiple whitespace with single space
         text = re.sub(r'\s+', ' ', text)
-        
-        # Replace multiple newlines with double newline (paragraph break)
         text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
-        
-        # Strip leading/trailing whitespace
         text = text.strip()
         
         return text

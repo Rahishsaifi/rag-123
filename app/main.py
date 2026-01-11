@@ -9,11 +9,9 @@ from app.core.logging import setup_logging, get_logger
 from app.api.v1.api import api_router
 import traceback
 
-# Setup logging
 setup_logging(debug=settings.debug)
 logger = get_logger(__name__)
 
-# Initialize FastAPI app
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -22,16 +20,14 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include API router
 app.include_router(api_router, prefix="/api/v1")
 
 

@@ -72,15 +72,12 @@ def validate_upload_file(file: UploadFile) -> None:
     Raises:
         HTTPException: If file validation fails
     """
-    # Validate file type
     if not validate_file_type(file.filename or ""):
         raise HTTPException(
             status_code=400,
             detail=f"File type not allowed. Allowed types: {', '.join(settings.allowed_file_extensions)}"
         )
     
-    # Note: file.size may not be available for all upload types
-    # Size validation should be done after reading the file content
 
 
 def sanitize_filename(filename: str) -> str:
@@ -93,10 +90,7 @@ def sanitize_filename(filename: str) -> str:
     Returns:
         Sanitized filename
     """
-    # Get just the filename without path
     safe_name = Path(filename).name
-    
-    # Remove or replace dangerous characters
     dangerous_chars = ['/', '\\', '..', '<', '>', ':', '"', '|', '?', '*']
     for char in dangerous_chars:
         safe_name = safe_name.replace(char, '_')

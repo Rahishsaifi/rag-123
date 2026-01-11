@@ -60,7 +60,6 @@ class EmbeddingService:
         if not texts:
             return []
         
-        # Filter out empty texts
         valid_texts = [text for text in texts if text and text.strip()]
         if not valid_texts:
             logger.warning("No valid texts provided for embedding")

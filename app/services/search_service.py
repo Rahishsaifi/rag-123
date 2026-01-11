@@ -49,13 +49,11 @@ class SearchService:
             if not self.index_client.get_index(self.index_name):
                 self._create_index()
         except Exception:
-            # Index doesn't exist, create it
             self._create_index()
     
     def _create_index(self) -> None:
         """Create the search index with vector support."""
         try:
-            # Define fields
             fields = [
                 SimpleField(name="id", type=SearchFieldDataType.String, key=True),
                 SimpleField(name="file_id", type=SearchFieldDataType.String, filterable=True),
@@ -77,7 +75,6 @@ class SearchService:
                 SimpleField(name="metadata", type=SearchFieldDataType.String, retrievable=True)
             ]
             
-            # Vector search configuration
             vector_search = VectorSearch(
                 algorithms=[
                     VectorSearchAlgorithmConfiguration(
@@ -99,7 +96,6 @@ class SearchService:
                 ]
             )
             
-            # Create index
             index = SearchIndex(
                 name=self.index_name,
                 fields=fields,
@@ -129,7 +125,6 @@ class SearchService:
             return
         
         try:
-            # Prepare documents for upload
             search_docs = []
             for doc in documents:
                 search_doc = {
@@ -145,7 +140,6 @@ class SearchService:
             
             result = self.search_client.upload_documents(documents=search_docs)
             
-            # Check for errors
             failed = [r for r in result if not r.succeeded]
             if failed:
                 logger.error(f"Failed to upload {len(failed)} documents")
@@ -178,7 +172,6 @@ class SearchService:
             List of search results with content and metadata
         """
         try:
-            # Vector search
             search_results = self.search_client.search(
                 search_text=None,
                 vector={

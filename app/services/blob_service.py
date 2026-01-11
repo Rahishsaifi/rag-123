@@ -55,7 +55,6 @@ class BlobService:
             AzureError: If upload fails
         """
         try:
-            # Create blob name
             blob_name = f"{file_id}/{file_path.name}"
             blob_name = sanitize_filename(blob_name)
             
@@ -64,7 +63,6 @@ class BlobService:
                 blob=blob_name
             )
             
-            # Upload file
             with open(file_path, "rb") as data:
                 blob_client.upload_blob(data, overwrite=True)
             

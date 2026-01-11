@@ -11,7 +11,6 @@ router = APIRouter()
 
 
 def get_rag_service() -> RAGService:
-    """Dependency for RAGService."""
     return RAGService()
 
 
@@ -40,7 +39,6 @@ async def chat(
             }
         )
         
-        # Process query through RAG pipeline
         result = rag_service.query(
             question=request.question,
             top_k=request.top_k

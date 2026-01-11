@@ -20,27 +20,22 @@ router = APIRouter()
 
 
 def get_blob_service() -> BlobService:
-    """Dependency for BlobService."""
     return BlobService()
 
 
 def get_parser() -> DocumentParser:
-    """Dependency for DocumentParser."""
     return DocumentParser()
 
 
 def get_chunking_service() -> ChunkingService:
-    """Dependency for ChunkingService."""
     return ChunkingService()
 
 
 def get_embedding_service() -> EmbeddingService:
-    """Dependency for EmbeddingService."""
     return EmbeddingService()
 
 
 def get_search_service() -> SearchService:
-    """Dependency for SearchService."""
     return SearchService()
 
 
@@ -55,8 +50,6 @@ async def upload_file(
 ) -> UploadResponse:
     """
     Upload a document file and trigger ingestion pipeline.
-    The document will be indexed and used as the knowledge base for Q&A.
-    Multiple documents can be uploaded to build a comprehensive knowledge base.
     
     Args:
         file: Uploaded file (PDF, DOC, or DOCX)
@@ -70,10 +63,7 @@ async def upload_file(
         UploadResponse with file ID and status
     """
     try:
-        # Validate file
         validate_upload_file(file)
-        
-        # Generate file ID
         file_id = generate_file_id()
         
         logger.info(
@@ -86,10 +76,7 @@ async def upload_file(
             }
         )
         
-        # Read file content
         file_content = await file.read()
-        
-        # Validate file size
         file_size = len(file_content)
         if not validate_file_size(file_size):
             raise HTTPException(
@@ -97,20 +84,15 @@ async def upload_file(
                 detail=f"File size exceeds maximum allowed size of {settings.max_file_size_mb}MB"
             )
         
-        # Ensure temp directory exists
         temp_dir = ensure_temp_dir()
-        
-        # Save to temporary file
         temp_path = save_temp_file(file_content, file.filename or "document", temp_dir)
         
         try:
-            # Upload to blob storage
             blob_url = blob_service.upload_file(
                 file_path=temp_path,
                 file_id=file_id
             )
             
-            # Parse document
             text = parser.parse_file(temp_path)
             
             if not text or not text.strip():
@@ -119,7 +101,6 @@ async def upload_file(
                     detail="Failed to extract text from document. The file may be empty or corrupted."
                 )
             
-            # Chunk text
             chunk_metadata = {
                 "file_id": file_id,
                 "filename": file.filename or "document"
@@ -132,7 +113,6 @@ async def upload_file(
                     detail="Failed to chunk document. The document may be too short."
                 )
             
-            # Generate embeddings
             chunk_texts = [chunk["content"] for chunk in chunks]
             embeddings = embedding_service.generate_embeddings(chunk_texts)
             
@@ -142,7 +122,6 @@ async def upload_file(
                     detail="Mismatch between chunks and embeddings"
                 )
             
-            # Prepare documents for search index
             search_documents = []
             for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
                 doc_id = f"{file_id}-chunk-{i}"
@@ -157,7 +136,6 @@ async def upload_file(
                 }
                 search_documents.append(search_doc)
             
-            # Upload to search index
             search_service.upload_documents(search_documents)
             
             logger.info(
@@ -179,7 +157,6 @@ async def upload_file(
             )
             
         finally:
-            # Clean up temporary file
             try:
                 if temp_path.exists():
                     temp_path.unlink()

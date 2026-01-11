@@ -54,10 +54,7 @@ class RAGService:
             }
         )
         
-        # Step 1: Generate query embedding
         query_embedding = self.embedding_service.generate_embedding(question)
-        
-        # Step 2: Retrieve relevant chunks
         search_results = self.search_service.search(
             query_vector=query_embedding,
             top_k=top_k
@@ -71,13 +68,8 @@ class RAGService:
                 "question": question
             }
         
-        # Step 3: Build context from retrieved chunks
         context = self._build_context(search_results)
-        
-        # Step 4: Generate answer using Azure OpenAI
         answer = self._generate_answer(question, context)
-        
-        # Step 5: Format source documents
         sources = self._format_sources(search_results)
         
         logger.info(

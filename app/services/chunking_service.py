@@ -28,7 +28,6 @@ class ChunkingService:
         self.chunk_size = chunk_size or settings.chunk_size
         self.chunk_overlap = chunk_overlap or settings.chunk_overlap
         
-        # Use cl100k_base encoding (used by GPT-4 and text-embedding-ada-002)
         if TIKTOKEN_AVAILABLE:
             try:
                 self.encoding = tiktoken.get_encoding("cl100k_base")
@@ -64,7 +63,6 @@ class ChunkingService:
         if self.encoding:
             chunks = self._chunk_with_tokens(text, metadata)
         else:
-            # Fallback to character-based chunking
             chunks = self._chunk_with_characters(text, metadata)
         
         logger.info(
@@ -89,16 +87,11 @@ class ChunkingService:
         start_idx = 0
         
         while start_idx < len(tokens):
-            # Calculate end index
             end_idx = min(start_idx + self.chunk_size, len(tokens))
-            
-            # Extract chunk tokens
             chunk_tokens = tokens[start_idx:end_idx]
             
-            # Decode back to text
             chunk_text = self.encoding.decode(chunk_tokens)
             
-            # Create chunk with metadata
             chunk = {
                 "content": chunk_text,
                 "chunk_index": len(chunks),
@@ -109,7 +102,6 @@ class ChunkingService:
             
             chunks.append(chunk)
             
-            # Move start index with overlap
             if end_idx >= len(tokens):
                 break
             start_idx = end_idx - self.chunk_overlap
@@ -117,8 +109,7 @@ class ChunkingService:
         return chunks
     
     def _chunk_with_characters(self, text: str, metadata: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Fallback character-based chunking (approximate)."""
-        # Rough approximation: 1 token ≈ 4 characters
+        """Fallback character-based chunking."""
         char_chunk_size = self.chunk_size * 4
         char_overlap = self.chunk_overlap * 4
         
@@ -128,9 +119,7 @@ class ChunkingService:
         while start_idx < len(text):
             end_idx = min(start_idx + char_chunk_size, len(text))
             
-            # Try to break at word boundary
             if end_idx < len(text):
-                # Look for last space or newline before end
                 last_break = text.rfind(' ', start_idx, end_idx)
                 last_newline = text.rfind('\n', start_idx, end_idx)
                 break_point = max(last_break, last_newline)
