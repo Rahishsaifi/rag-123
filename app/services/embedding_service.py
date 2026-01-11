@@ -19,7 +19,7 @@ class EmbeddingService:
         self.client = AzureOpenAI(
             api_key=settings.azure_openai_api_key,
             api_version=settings.azure_openai_api_version,
-            azure_endpoint=settings.azure_openai_endpoint
+            azure_endpoint=settings.azure_openai_endpoint.rstrip('/')
         )
         self.deployment = settings.azure_openai_embedding_deployment
         self.max_retries = 3

@@ -22,7 +22,7 @@ class RAGService:
         self.openai_client = AzureOpenAI(
             api_key=settings.azure_openai_api_key,
             api_version=settings.azure_openai_api_version,
-            azure_endpoint=settings.azure_openai_endpoint
+            azure_endpoint=settings.azure_openai_endpoint.rstrip('/')
         )
         self.chat_deployment = settings.azure_openai_chat_deployment
         self.default_top_k = settings.top_k_results

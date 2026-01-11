@@ -76,16 +76,23 @@ try:
     elif "your-" in endpoint or "your-" in api_key:
         print("   ❌ Placeholder values detected (contains 'your-')")
     else:
+        # Remove trailing slash from endpoint if present
+        endpoint_clean = endpoint.rstrip('/')
+        
         client = AzureOpenAI(
             api_key=api_key,
             api_version=api_version,
-            azure_endpoint=endpoint
+            azure_endpoint=endpoint_clean
         )
-        # Try to list deployments (lightweight check)
+        # Try a simple API call to test connection
         try:
-            deployments = client.models.list()
+            # Try embeddings endpoint (most reliable test)
+            test_response = client.embeddings.create(
+                model=os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-ada-002"),
+                input="test"
+            )
             print(f"   ✅ Azure OpenAI connection successful")
-            print(f"      Endpoint: {endpoint}")
+            print(f"      Endpoint: {endpoint_clean}")
             results["openai"] = True
         except Exception as e:
             print(f"   ❌ Azure OpenAI connection failed: {str(e)}")
