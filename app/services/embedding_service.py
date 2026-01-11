@@ -28,8 +28,11 @@ class EmbeddingService:
             self.client = AzureOpenAI(
                 api_key=settings.azure_openai_api_key,
                 api_version=settings.azure_openai_api_version,
-                azure_endpoint=endpoint
+                azure_endpoint=endpoint,
+                timeout=60.0,  # 60 second timeout
+                max_retries=0  # We handle retries ourselves
             )
+            logger.info(f"Azure OpenAI client initialized: endpoint={endpoint}, deployment={settings.azure_openai_embedding_deployment}")
         except Exception as e:
             logger.error(f"Failed to initialize Azure OpenAI client: {e}")
             logger.error(f"Endpoint: {endpoint}")
@@ -84,6 +87,20 @@ class EmbeddingService:
         
         for attempt in range(self.max_retries):
             try:
+                # Log attempt details for debugging
+                if attempt == 0:
+                    logger.info(
+                        f"Attempting to generate embeddings",
+                        extra={
+                            "extra_fields": {
+                                "deployment": self.deployment,
+                                "endpoint": settings.azure_openai_endpoint,
+                                "num_texts": len(valid_texts),
+                                "api_version": settings.azure_openai_api_version
+                            }
+                        }
+                    )
+                
                 response = self.client.embeddings.create(
                     model=self.deployment,
                     input=valid_texts
@@ -108,19 +125,53 @@ class EmbeddingService:
                 error_type = type(e).__name__
                 error_msg = str(e)
                 
+                # Extract additional error details if available
+                error_details = {
+                    "error_type": error_type,
+                    "error": error_msg,
+                    "endpoint": settings.azure_openai_endpoint,
+                    "deployment": self.deployment,
+                    "api_version": settings.azure_openai_api_version
+                }
+                
+                # Try to get HTTP response details if available
+                if hasattr(e, 'response'):
+                    try:
+                        error_details["http_status"] = getattr(e.response, 'status_code', None)
+                        error_details["http_headers"] = dict(getattr(e.response, 'headers', {}))
+                        if hasattr(e.response, 'text'):
+                            error_details["http_body"] = e.response.text[:500]  # First 500 chars
+                    except:
+                        pass
+                
+                # Try to get OpenAI API error details
+                if hasattr(e, 'status_code'):
+                    error_details["status_code"] = e.status_code
+                if hasattr(e, 'body'):
+                    try:
+                        import json
+                        error_details["api_error_body"] = json.loads(e.body) if isinstance(e.body, str) else str(e.body)[:500]
+                    except:
+                        error_details["api_error_body"] = str(e.body)[:500]
+                
                 # Log detailed error information
-                logger.warning(
+                logger.error(
                     f"Embedding generation failed (attempt {attempt + 1}/{self.max_retries}): {error_type}: {error_msg}",
-                    extra={
-                        "extra_fields": {
-                            "error_type": error_type,
-                            "error": error_msg,
-                            "endpoint": settings.azure_openai_endpoint,
-                            "deployment": self.deployment,
-                            "api_version": settings.azure_openai_api_version
-                        }
-                    }
+                    extra={"extra_fields": error_details}
                 )
+                
+                # Print to console for immediate visibility
+                print(f"\n❌ Embedding Error (attempt {attempt + 1}/{self.max_retries}):")
+                print(f"   Type: {error_type}")
+                print(f"   Message: {error_msg}")
+                print(f"   Endpoint: {settings.azure_openai_endpoint}")
+                print(f"   Deployment: {self.deployment}")
+                print(f"   API Version: {settings.azure_openai_api_version}")
+                if "http_status" in error_details:
+                    print(f"   HTTP Status: {error_details['http_status']}")
+                if "api_error_body" in error_details:
+                    print(f"   API Error: {error_details['api_error_body']}")
+                print()
                 
                 if attempt < self.max_retries - 1:
                     wait_time = self.retry_delay * (2 ** attempt)  # Exponential backoff
