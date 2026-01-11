@@ -10,14 +10,24 @@ from pydantic import Field, model_validator
 
 # Load .env file using python-dotenv (primary loader)
 # This runs when this module is imported, before Settings is instantiated
-env_path = Path('.env')
-if env_path.exists():
-    load_dotenv(env_path, override=True)
-else:
-    # Try to find .env in parent directories (useful for different working directories)
-    parent_env = Path(__file__).parent.parent.parent / '.env'
-    if parent_env.exists():
-        load_dotenv(parent_env, override=True)
+# Try multiple locations to find .env file
+env_paths = [
+    Path('.env'),  # Current working directory
+    Path(__file__).parent.parent.parent / '.env',  # Project root
+    Path(__file__).parent.parent / '.env',  # app/.env
+]
+
+env_loaded = False
+for env_path in env_paths:
+    if env_path.exists():
+        load_dotenv(env_path, override=True)
+        env_loaded = True
+        print(f"✓ Loaded .env from: {env_path.absolute()}")
+        break
+
+if not env_loaded:
+    import warnings
+    warnings.warn("No .env file found. Make sure .env exists in project root or current directory.")
 
 
 class Settings(BaseSettings):

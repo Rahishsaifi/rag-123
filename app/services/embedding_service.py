@@ -16,7 +16,15 @@ class EmbeddingService:
     
     def __init__(self):
         """Initialize Azure OpenAI client."""
-        endpoint = settings.azure_openai_endpoint.rstrip('/')
+        # Get endpoint and clean it
+        endpoint = settings.azure_openai_endpoint.strip().rstrip('/')
+        
+        # Debug: Log the exact values being used
+        logger.info(f"Initializing Azure OpenAI client:")
+        logger.info(f"  Endpoint: '{endpoint}' (length: {len(endpoint)})")
+        logger.info(f"  Deployment: '{settings.azure_openai_embedding_deployment}'")
+        logger.info(f"  API Version: '{settings.azure_openai_api_version}'")
+        logger.info(f"  API Key (first 10 chars): '{settings.azure_openai_api_key[:10] if settings.azure_openai_api_key else 'None'}...'")
         
         # Validate endpoint format
         if not endpoint.startswith('https://'):
@@ -25,14 +33,19 @@ class EmbeddingService:
             logger.warning(f"Endpoint should contain .openai.azure.com, got: {endpoint}")
         
         try:
+            # Initialize client exactly like test_credentials.py does (no timeout/retry params)
             self.client = AzureOpenAI(
                 api_key=settings.azure_openai_api_key,
                 api_version=settings.azure_openai_api_version,
-                azure_endpoint=endpoint,
-                timeout=60.0,  # 60 second timeout
-                max_retries=0  # We handle retries ourselves
+                azure_endpoint=endpoint
             )
-            logger.info(f"Azure OpenAI client initialized: endpoint={endpoint}, deployment={settings.azure_openai_embedding_deployment}")
+            logger.info(f"Azure OpenAI client initialized successfully")
+            
+        except TypeError as e:
+            if "proxies" in str(e):
+                logger.error("OpenAI SDK compatibility error - upgrade with: pip install --upgrade 'openai>=1.55.3'")
+                raise
+            raise
         except Exception as e:
             logger.error(f"Failed to initialize Azure OpenAI client: {e}")
             logger.error(f"Endpoint: {endpoint}")
@@ -100,6 +113,10 @@ class EmbeddingService:
                             }
                         }
                     )
+                
+                # Log the exact request being made
+                logger.info(f"Making embedding request: model={self.deployment}, num_texts={len(valid_texts)}")
+                logger.info(f"Client endpoint: {self.client._client.base_url if hasattr(self.client, '_client') else 'N/A'}")
                 
                 response = self.client.embeddings.create(
                     model=self.deployment,

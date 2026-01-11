@@ -46,6 +46,32 @@ async def health_check():
     }
 
 
+@app.get("/debug/config")
+async def debug_config():
+    """
+    Debug endpoint to check configuration values.
+    Shows what values are actually being used.
+    """
+    import os
+    return {
+        "from_settings": {
+            "endpoint": settings.azure_openai_endpoint,
+            "endpoint_length": len(settings.azure_openai_endpoint),
+            "deployment": settings.azure_openai_embedding_deployment,
+            "api_version": settings.azure_openai_api_version,
+            "api_key_length": len(settings.azure_openai_api_key) if settings.azure_openai_api_key else 0,
+            "api_key_first_10": settings.azure_openai_api_key[:10] if settings.azure_openai_api_key else "None"
+        },
+        "from_env": {
+            "endpoint": os.getenv("AZURE_OPENAI_ENDPOINT"),
+            "deployment": os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT"),
+            "api_version": os.getenv("AZURE_OPENAI_API_VERSION"),
+            "api_key_length": len(os.getenv("AZURE_OPENAI_API_KEY", "")),
+            "api_key_first_10": os.getenv("AZURE_OPENAI_API_KEY", "")[:10] if os.getenv("AZURE_OPENAI_API_KEY") else "None"
+        }
+    }
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     """Handle HTTP exceptions."""
