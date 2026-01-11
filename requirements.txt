@@ -10,6 +10,7 @@ python-docx==1.1.0
 tiktoken>=0.8.0; python_version < '3.13'
 pydantic-settings==2.1.0
 pydantic==2.5.0
+python-dotenv
 
 # Note: tiktoken is optional. If installation fails, the app will use character-based chunking as fallback.
 # To install tiktoken manually: pip install tiktoken

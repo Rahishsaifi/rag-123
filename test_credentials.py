@@ -14,40 +14,16 @@ if not env_path.exists():
     print("   Please create a .env file from env.example")
     sys.exit(1)
 
-# Load environment variables from .env file
+# Load environment variables from .env file using python-dotenv
 try:
-    from pydantic_settings import BaseSettings, SettingsConfigDict
-    
-    class EnvSettings(BaseSettings):
-        model_config = SettingsConfigDict(
-            env_file=".env",
-            env_file_encoding="utf-8",
-            case_sensitive=False,
-            extra="ignore"
-        )
-        
-        azure_openai_endpoint: str = ""
-        azure_openai_api_key: str = ""
-        azure_openai_api_version: str = "2024-02-15-preview"
-        azure_search_endpoint: str = ""
-        azure_search_api_key: str = ""
-        azure_blob_connection_string: str = ""
-        azure_blob_container_name: str = "documents"
-    
-    settings = EnvSettings()
-    
-    # Set environment variables for compatibility
-    os.environ["AZURE_OPENAI_ENDPOINT"] = settings.azure_openai_endpoint
-    os.environ["AZURE_OPENAI_API_KEY"] = settings.azure_openai_api_key
-    os.environ["AZURE_OPENAI_API_VERSION"] = settings.azure_openai_api_version
-    os.environ["AZURE_SEARCH_ENDPOINT"] = settings.azure_search_endpoint
-    os.environ["AZURE_SEARCH_API_KEY"] = settings.azure_search_api_key
-    os.environ["AZURE_BLOB_CONNECTION_STRING"] = settings.azure_blob_connection_string
-    os.environ["AZURE_BLOB_CONTAINER_NAME"] = settings.azure_blob_container_name
-    
+    from dotenv import load_dotenv
+    load_dotenv(env_path)
+except ImportError:
+    print("❌ Error: python-dotenv package not installed")
+    print("   Install it with: pip install python-dotenv")
+    sys.exit(1)
 except Exception as e:
     print(f"❌ Error: Could not load .env file: {e}")
-    print("   Make sure pydantic-settings is installed: pip install pydantic-settings")
     sys.exit(1)
 
 print("=" * 60)
