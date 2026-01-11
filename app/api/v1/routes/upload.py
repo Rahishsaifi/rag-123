@@ -39,7 +39,7 @@ def get_search_service() -> SearchService:
     return SearchService()
 
 
-@router.post("/upload", response_model=UploadResponse)
+@router.post("", response_model=UploadResponse)
 async def upload_file(
     file: UploadFile = File(...),
     blob_service: BlobService = Depends(get_blob_service),

@@ -14,7 +14,7 @@ def get_rag_service() -> RAGService:
     return RAGService()
 
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post("", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
     rag_service: RAGService = Depends(get_rag_service)

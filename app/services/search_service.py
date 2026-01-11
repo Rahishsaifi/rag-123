@@ -81,6 +81,7 @@ class SearchService:
                         name="my-hnsw-config",
                         kind="hnsw",
                         parameters=HnswAlgorithmConfiguration(
+                            name="my-hnsw-params",
                             m=4,
                             ef_construction=400,
                             ef_search=500,
